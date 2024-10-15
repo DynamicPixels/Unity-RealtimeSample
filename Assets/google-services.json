@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "919828006452",
+    "project_id": "dynamictest-541e7",
+    "storage_bucket": "dynamictest-541e7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:919828006452:android:755b1bf02bd4cf1b746c61",
+        "android_client_info": {
+          "package_name": "com.DynamicPixel.DynamicsTest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "919828006452-nniqb12h192sj1lger8n6lj56gh9h0v0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2CPAEKSyL2amteMxbo3M7A5Vhc9JIA90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "919828006452-nniqb12h192sj1lger8n6lj56gh9h0v0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
