@@ -27,7 +27,7 @@ public class GameManager : MonoBehaviour
     public Vector3 destinationPlayer2;
     public int directionPlayer1;
     public int directionPlayer2;
-    public Vector3 destinationBall;
+    public Vector3 destinationBall; 
     public Vector3 ballVelocity;
     public long lastTimeStamp;
 
@@ -46,7 +46,7 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.GoToGame();
         move = true;
         StartCoroutine(StartMatchLoop());
-        RealtimeObserver.Instance.StartSync(roomHandler.GetRoom(), ConnectionManager.Instance.User, isCreator);
+        //RealtimeObserver.Instance.StartSync(roomHandler.GetRoom(), ConnectionManager.Instance.User, isCreator);
     }
 
     
