@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DynamicPixels.GameService;
+using DynamicPixels.GameService.Models;
 using DynamicPixels.GameService.Models.inputs;
 using DynamicPixels.GameService.Services.Authentication.Models;
 using DynamicPixels.GameService.Services.Table;
@@ -10,34 +11,20 @@ using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class TableUserInfo
-{
-    public int? id;
-    public string username;
-    public string name;
-}
-
-public class TableUserInfoAdd
+public class TableUserInfo : BaseTableModel
 {
     public string username;
     public string name;
 }
 
-public class TableUserScore
-{
-    public int? id;
-    public string username;
-    public int score;
-}
-public class TableUserScoreAdd
+public class TableUserScore : BaseTableModel
 {
     public string username;
     public int score;
 }
 
-public class JoinedTable
+public class JoinedTable : BaseTableModel
 {
-    public int? id;
     public string username;
     public int score;
     public string name;
@@ -106,7 +93,7 @@ public class TableManager : MonoBehaviour
                 foreach (var info in temp1.List)
                 {
                     var temp = Instantiate(twoColumnSlot, tableContentObject.transform);
-                    temp.Init(info.username, info.score.ToString(), info.id ?? 0);
+                    temp.Init(info.username, info.score.ToString(), info.id);
                 }
                 break;
             case "671ff3e8052c87010e59941a":
@@ -122,7 +109,7 @@ public class TableManager : MonoBehaviour
                 foreach (var info in temp2.List)
                 {
                     var temp = Instantiate(twoColumnSlot, tableContentObject.transform);
-                    temp.Init(info.username, info.name, info.id ?? 0);
+                    temp.Init(info.username, info.name, info.id);
                 }
                 break;
         }
@@ -145,10 +132,10 @@ public class TableManager : MonoBehaviour
         switch (_selectedTable)
         {
             case "671ff8de052c87010e5998a2":
-                await ServiceHub.Table.Insert<TableUserScoreAdd, InsertParams>(new InsertParams()
+                await ServiceHub.Table.Insert<TableUserScore, InsertParams>(new InsertParams()
                 {
                     TableId = _selectedTable,
-                    Data = new TableUserScoreAdd()
+                    Data = new TableUserScore()
                     {
                         username = parameter1.text,
                         score = Int32.Parse(parameter2.text.Substring(0, parameter2.text.Length - 1))
@@ -156,10 +143,10 @@ public class TableManager : MonoBehaviour
                 });
                 break;
             case "671ff3e8052c87010e59941a":
-                await ServiceHub.Table.Insert<TableUserInfoAdd, InsertParams>(new InsertParams()
+                await ServiceHub.Table.Insert<TableUserInfo, InsertParams>(new InsertParams()
                 {
                     TableId = _selectedTable,
-                    Data = new TableUserInfoAdd()
+                    Data = new TableUserInfo()
                     {
                         username = parameter1.text,
                         name = parameter2.text
