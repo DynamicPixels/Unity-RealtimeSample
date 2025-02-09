@@ -104,7 +104,7 @@ public class RoomHandler : MonoBehaviour
             yield return new WaitForSeconds(1);
             var result = ConnectionManager.Instance.services.MultiPlayer.RoomService.GetRoomById(_room.Id);
             yield return new WaitUntil(() => result.IsCompleted);
-            _room = result.Result;
+            _room = result.Result.Row;
             player1Name.text = _room.Players[0].UserId.ToString();
             if (_room.Players.Count > 1)
             {

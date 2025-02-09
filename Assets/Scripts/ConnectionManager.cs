@@ -58,28 +58,21 @@ public class ConnectionManager : MonoBehaviour
 
     public async void LoginWithEmail()
     {
-        try
-        {
-            var result = await ServiceHub.Authentication.LoginWithEmail(
-                new LoginWithEmailParams()
-                    { email = email.text, password = pass.text });
-            // var result = await DynamicPixels.GameService.ServiceHub.Authentication.LoginWithEmail(
-            //     new LoginWithEmailParams()
-            //         { email = "amirferyg@gmail.com", password = "123456" });
-            SignInSuccessful(result);
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e.Message);
-        }
+        var result = await ServiceHub.Authentication.LoginWithEmail(
+            new LoginWithEmailParams()
+                { email = email.text, password = pass.text });
+        // var result = await DynamicPixels.GameService.ServiceHub.Authentication.LoginWithEmail(
+        //     new LoginWithEmailParams()
+        //         { email = "amirferyg@gmail.com", password = "123456" });
+        SignInSuccessful(result);
     }
-    
+
     public async void LoginWithGoogle()
     {
         ServiceManager.GetService<OpenIDConnectService>().LoginCompleted += GoogleLoginCompleted;
 
         await ServiceManager.GetService<OpenIDConnectService>().OpenLoginPageAsync();
-        
+
         Debug.Log("Opened");
     }
 
@@ -87,31 +80,18 @@ public class ConnectionManager : MonoBehaviour
     {
         var accessToken = ServiceManager.GetService<OpenIDConnectService>().AccessToken;
         Debug.Log(accessToken);
-        try
-        {
-            var result = await ServiceHub.Authentication.LoginWithGoogle(
-                new LoginWithGoogleParams(){AccessToken = accessToken});
-            SignInSuccessful(result);
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e.Message);
-        }
+
+        var result = await ServiceHub.Authentication.LoginWithGoogle(
+            new LoginWithGoogleParams() { AccessToken = accessToken });
+        SignInSuccessful(result);
     }
 
     public async void Signup()
     {
-        try
-        {
-            var result = await ServiceHub.Authentication.RegisterWithEmail(
-                new RegisterWithEmailParams()
-                    { Email = email.text, Password = pass.text, Name = name.text });
-            SignInSuccessful(result);
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e.Message);
-        }
+        var result = await ServiceHub.Authentication.RegisterWithEmail(
+            new RegisterWithEmailParams()
+                { Email = email.text, Password = pass.text, Name = name.text });
+        SignInSuccessful(result);
     }
 
     public void Logout()
@@ -131,16 +111,9 @@ public class ConnectionManager : MonoBehaviour
 
     public async void LoginAsGuest()
     {
-        try
-        {
-            var result = await ServiceHub.Authentication.LoginAsGuest(new LoginAsGuestParams()
-                { name = "Guest-" + Random.Range(0, 100000000) });
-            SignInSuccessful(result);
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e.Message);
-        }
+        var result = await ServiceHub.Authentication.LoginAsGuest(new LoginAsGuestParams()
+            { name = "Guest-" + Random.Range(0, 100000000) });
+        SignInSuccessful(result);
     }
 
     private void SignInSuccessful(LoginResponse response)
@@ -161,7 +134,9 @@ public class ConnectionManager : MonoBehaviour
     public async void CreateRoom()
     {
         var results = await services.MultiPlayer.RoomService.GetAllRooms(new GetAllRoomsParams());
-        foreach (var room in results)
+        if (!results.IsSuccessful)
+            return;
+        foreach (var room in results.List)
         {
             if (room.CreatorId == User.Id)
                 await services.MultiPlayer.RoomService.DeleteRoom(room.Id);
@@ -176,7 +151,8 @@ public class ConnectionManager : MonoBehaviour
             MaxPlayer = 2,
             IsTurnBasedGame = false
         });
-        roomHandler.SetRoom(result);
+        Debug.Log(result.ErrorMessage);
+        roomHandler.SetRoom(result.Row);
         UIManager.Instance.GoToRoomHost();
     }
 
@@ -186,7 +162,7 @@ public class ConnectionManager : MonoBehaviour
         var results = await services.MultiPlayer.RoomService.GetAllRooms(new GetAllRoomsParams());
         for (int i = 0; i < content.childCount; i++)
             Destroy(content.GetChild(i).gameObject);
-        foreach (var room in results)
+        foreach (var room in results.List)
         {
             if (room.Players.Count <= 0)
                 continue;
@@ -197,21 +173,20 @@ public class ConnectionManager : MonoBehaviour
 
         UIManager.Instance.GoToRoomJoin();
     }
-    
+
     public async void LeaderboardPanel()
     {
-        
         var results =
             await services.Leaderboard.GetUsersScores<GetScoresParams, UserScore>(new GetScoresParams()
                 { Leaderboardid = 14, limit = 10 });
-        UIManager.Instance.SetLeaderboard(results);
+        UIManager.Instance.SetLeaderboard(results.List);
     }
-    
+
     public async void GetParties()
     {
-        var parties = await services.Party.GetParties(new GetPartiesParams(){Skip = 80});
+        var parties = await services.Party.GetParties(new GetPartiesParams() { Skip = 80 });
         var subscribes = await services.Party.GetSubscribedParties(new GetSubscribedPartiesParams());
-        UIManager.Instance.SetParties(parties, subscribes);
+        UIManager.Instance.SetParties(parties.List, subscribes.List);
     }
 
     public async void RemoveParty(int partyId)
@@ -224,11 +199,11 @@ public class ConnectionManager : MonoBehaviour
     {
         await services.Party.JoinToParty(new JoinToPartyParams() { PartyId = partyId });
     }
-    
+
     public async void GetFriends()
     {
         var friends = await services.Friendship.GetMyFriends(new GetMyFriendsParams());
-        UIManager.Instance.UpdateFriendsList(friends);
+        UIManager.Instance.UpdateFriendsList(friends.List);
         UpdateRequests();
     }
 
@@ -237,28 +212,29 @@ public class ConnectionManager : MonoBehaviour
         var friendRequests = await services.Friendship.GetMyFriendshipRequests(new GetMyFriendshipRequestsParams());
         var subbedParties = await services.Party.GetSubscribedParties(new GetSubscribedPartiesParams());
         var partyRequests = new List<PartyMember>();
-        foreach (var party in subbedParties)
+        foreach (var party in subbedParties.List)
         {
             if (party.Owner == User.Id)
             {
-                partyRequests.AddRange(await services.Party.GetPartyWaitingMembers(new GetPartyWaitingMembersParams() { PartyId = party.Id }));
+                partyRequests.AddRange((await services.Party.GetPartyWaitingMembers(new GetPartyWaitingMembersParams()
+                    { PartyId = party.Id })).List);
             }
         }
-        UIManager.Instance.UpdateRequests(friendRequests, partyRequests);
+
+        UIManager.Instance.UpdateRequests(friendRequests.List, partyRequests);
     }
 
     public async void AddFriend()
     {
         try
         {
-            var results = await services.Friendship.RequestFriendship(new RequestFriendshipParams() { UserId = 78});
+            var results = await services.Friendship.RequestFriendship(new RequestFriendshipParams() { UserId = 78 });
             GetFriends();
         }
         catch (Exception e)
         {
             Debug.Log(e.Message);
         }
-        
     }
 
     public async void JoinChatRoom()
@@ -271,11 +247,10 @@ public class ConnectionManager : MonoBehaviour
                 globalConversation = conversation;
                 return;
             }
-                
         }
 
         await services.Chats.Subscribe(new SubscribeParams() { ConversationName = "Global" });
-        
+
         foreach (var conversation in results)
         {
             if (conversation.Name == "Global")
@@ -283,11 +258,9 @@ public class ConnectionManager : MonoBehaviour
                 globalConversation = conversation;
                 return;
             }
-                
         }
-
     }
-    
+
     public async void RemoveFriend(int id)
     {
         var result = await services.Friendship.DeleteFriend(new DeleteFriendParams() { UserId = id });
@@ -296,13 +269,13 @@ public class ConnectionManager : MonoBehaviour
 
     public async void AcceptFriendship(int id)
     {
-        await services.Friendship.AcceptRequest(new AcceptRequestParams() { RequestId = id});
+        await services.Friendship.AcceptRequest(new AcceptRequestParams() { RequestId = id });
         GetFriends();
     }
-    
+
     public async void RejectFriendship(int id)
     {
-        await services.Friendship.RejectRequest(new RejectRequestParams() { RequestId = id});
+        await services.Friendship.RejectRequest(new RejectRequestParams() { RequestId = id });
         GetFriends();
     }
 
@@ -310,7 +283,7 @@ public class ConnectionManager : MonoBehaviour
     {
         await services.Party.CreateParty(new CreatePartyParams()
         {
-            Data =new PartyInput
+            Data = new PartyInput
             {
                 Name = partyName.text,
                 MaxMemberCount = 10,
@@ -326,9 +299,10 @@ public class ConnectionManager : MonoBehaviour
         try
         {
             var result =
-                await services.Leaderboard.GetMyScore<GetCurrentUserScoreParams, UserScore>(new GetCurrentUserScoreParams()
-                    { LeaderboardId = 14 });
-            score = result.Value;
+                await services.Leaderboard.GetMyScore<GetCurrentUserScoreParams, UserScore>(
+                    new GetCurrentUserScoreParams()
+                        { LeaderboardId = 14 });
+            score = result.Row.Value;
         }
         catch (Exception e)
         {
@@ -343,7 +317,8 @@ public class ConnectionManager : MonoBehaviour
                     AchievementId = 36,
                     StepId = 43
                 });
-            } else if (score + 1 == 1)
+            }
+            else if (score + 1 == 1)
             {
                 await services.Achievement.UnlockAchievement(new UnlockAchievementParams
                 {
@@ -354,10 +329,9 @@ public class ConnectionManager : MonoBehaviour
         }
         catch (Exception e)
         {
-
         }
-        
-        
+
+
         await services.Leaderboard.SubmitScore<SubmitScoreParams, UserScore>(new SubmitScoreParams()
             { LeaderboardId = 14, Score = score + 1 });
     }
@@ -365,21 +339,19 @@ public class ConnectionManager : MonoBehaviour
     public async void JoinRoom(int id)
     {
         var result = await services.MultiPlayer.RoomService.Join(id);
-        roomHandler.SetRoom(result);
+        roomHandler.SetRoom(result.Row);
         UIManager.Instance.GoToRoomHost();
     }
 
     public async void StartMatch()
     {
         var result = await services.MultiPlayer.MatchService.MakeAndStartMatch(roomHandler.GetRoom().Id);
-        roomHandler.StartMatch(result);
+        roomHandler.StartMatch(result.Row);
     }
 
     public async void StartMatch(int matchId)
     {
         var result = await services.MultiPlayer.MatchService.LoadMatch(matchId);
-        roomHandler.StartMatch(result);
+        roomHandler.StartMatch(result.Row);
     }
-
-    
 }
